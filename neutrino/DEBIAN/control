@@ -1,0 +1,9 @@
+Package: neutrino-server
+Version: 1.0
+Architecture: all
+Essential: no
+Priority: optional
+Pre-Depends: curl, systemctl, lsof, nodejs, npm, nginx, certbot, shadowsocks-libev, postgresql
+Depends: curl, systemctl, lsof, nodejs, npm, nginx, certbot, shadowsocks-libev, postgresql
+Maintainer: Alexander Evsikov
+Description: Fast-install shadowsocks server with web control pannel.

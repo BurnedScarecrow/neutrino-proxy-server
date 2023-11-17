@@ -1,0 +1,17 @@
+[Unit]
+Description=Neutrino proxy-server service
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=root
+ExecStart=/bin/bash /usr/bin/neutrino-start.sh 
+ExecStop=/bin/bash /usr/bin/neutrino-stop.sh
+KillMode=process
+
+
+[Install]
+WantedBy=multi-user.target
+

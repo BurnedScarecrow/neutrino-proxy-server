@@ -1,0 +1,9 @@
+# #!/bin/bash
+
+# # Pre-install script
+
+echo "Pre-install script processing"
+
+# Установка n (менеджер версий Node.js) и установка LTS версии Node.js
+sudo npm install -g n
+sudo n lts

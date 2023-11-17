@@ -1,0 +1,204 @@
+#!/bin/bash
+
+clear
+
+set -e
+
+function update_nginx_config() {
+    local param1=$1
+    local domain=$2
+    local cert=$3
+    local key=$4
+   
+    ssl_cert="/etc/letsencrypt/live/$domain/fullchain.pem"
+    ssl_cert_key="/etc/letsencrypt/live/$domain/privkey.pem"
+
+    ssl_cert_self="/etc/nginx/selfsigned_cert.pem"
+    ssl_cert_key_self="/etc/nginx/selfsigned_key.pem"
+
+
+    if [ "$param1" == "self" ]; then
+        # скопировать файл /etc/nginx/neutrino_selfsigned.conf в /etc/nginx/sites-enabled/default
+        cp /etc/nginx/neutrino_selfsigned.conf  /etc/nginx/sites-enabled/default
+
+        sed -i "s#cert_stub#$ssl_cert_self#g" /usr/share/neutrino-server/back/src/main.ts
+        sed -i "s#key_stub#$ssl_cert_key_self#g" /usr/share/neutrino-server/back/src/main.ts
+
+    elif [ "$param1" == "ca" ]; then
+        # скопировать файл /etc/nginx/neutrino_casigned.conf в //etc/nginx/sites-enabled/default
+        cp /etc/nginx/neutrino_casigned.conf  /etc/nginx/sites-enabled/default
+        
+        # заменить подстроки "your_domain" в файле на содержимое переменной $domain
+        sed -i "s#your_domain#$domain#g" /etc/nginx/sites-enabled/default
+
+        sed -i "s#cert_stub#$ssl_cert#g" /usr/share/neutrino-server/back/src/main.ts
+        sed -i "s#key_stub#$ssl_cert_key#g" /usr/share/neutrino-server/back/src/main.ts
+
+    elif [ "$param1" == "custom" ] && [ "$domain" ] && [ "$cert" ] && [ "$key" ]; then
+        # скопировать файл /etc/nginx/neutrino_own.conf в /etc/nginx/sites-enabled/default
+        cp /etc/nginx/neutrino_custom.conf  /etc/nginx/sites-enabled/default
+        
+        # заменить подстроки
+        sed -i "s#domain_stub#$domain#g" /etc/nginx/sites-enabled/default
+        sed -i "s#cert_stub#$cert#g" /etc/nginx/sites-enabled/default
+        sed -i "s#key_stub#$key#g" /etc/nginx/sites-enabled/default
+        sed -i "s#cert_stub#$cert#g" /usr/share/neutrino-server/back/src/main.ts
+        sed -i "s#key_stub#$key#g" /usr/share/neutrino-server/back/src/main.ts
+
+    else
+        echo "Не передан параметр определяющий режим обновления конфигурации  'self' | 'ca' | 'custom'. "
+    fi
+}
+
+function create_selfsigned_cert() {
+    echo ""
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/nginx/selfsigned_key.pem -out /etc/nginx/selfsigned_cert.pem
+    echo ""
+}
+
+function create_casigned_cert() {
+    echo "Введите email для создания сертификата для домена $domain"
+    read email
+    
+    certbot certonly --standalone --agree-tos --email "$email" --domains "$domain" --non-interactive
+ 
+    return $?
+}
+
+# ---------------------------------------------------------------------------- #
+
+echo ""
+echo "Post-install script processing"
+
+
+cd "/usr/share/neutrino-server/back"
+sudo npm i -g n
+sudo n lts 
+sudo npm i -g serve --quite
+npm i 
+echo "✅ Install node modules"
+
+# ---------------------------------------------------------------------------- #
+
+echo ""
+echo "Установка SSL сертификата"
+echo "Введите домен для данного сервера при наличии: "
+read domain
+
+echo ""
+echo "Введите полный путь к SSL сертификату при наличии: "
+read cert
+echo ""
+
+if [ "$cert" ]; then
+    echo "Введите полный путь к ключу при наличии: "
+    read key
+    echo ""
+fi
+
+if [ "$domain" ] && [ "$cert" ] && [ "$key" ]; then
+    # У пользователя есть домен, сертификат и ключ
+    update_nginx_config "custom" "$domain" "$cert" "$key" 
+
+elif [ "$key" ] && [ "$cert" ]; then
+    # У пользователя есть сертификат и ключ, но нет домена
+    update_nginx_config "custom" "_" "$cert" "$key" 
+
+elif [ "$domain" ]; then
+    # У пользователя есть только домен
+    echo "Создаем сертификат с помощью Lets Encrypt"
+    echo ""
+    create_casigned_cert
+    
+    if [ $? -eq 0 ]; then
+        echo ""
+        echo "Сертификат создан"
+        echo ""
+        
+        update_nginx_config "ca" "$domain"
+
+        echo ""
+        echo "Создание в планировщике записи об обновлении сертификата."
+        sudo mv /etc/nginx/_certbot /etc/cron.d/certbot
+    else
+        echo ""
+        echo "Не удалось получить сертификат от EFF."
+        echo ""
+        echo "Создать самоподписанный сертификат? (Y/n)"
+        read generate_selfsigned_answer
+        echo ""
+        
+        if [ -n '$generate_selfsigned_answer' ] || [ '$generate_selfsigned_answer' == 'y' ] || [] '$generate_selfsigned_answer' -eq 'Y' ]; then
+            create_selfsigned_cert
+            update_nginx_config "self"
+        else
+            exit $?
+        fi
+    fi
+   
+else
+    # У пользователя ничего нет
+    echo "Создаем самоподписанный сертификат"
+    echo ""
+    create_selfsigned_cert
+    update_nginx_config "self"
+fi
+
+echo ""
+echo "Конфигурация сервера завершена."
+
+echo "Задайте пароль администратора neutrino panel"
+
+password=""
+
+while [[ -z "$password" ]]; do
+    read -s password
+
+    if [[ -z "$password" ]]; then
+        echo "Пароль не может быть пустым. Пожалуйста, введите пароль снова."
+    fi
+done
+
+HASH=$(echo -n $password | md5sum | awk '{print $1}')
+
+
+# Настройка PostgreSQL и создание базы данных, пользователя и таблиц
+echo
+sudo service postgresql start
+echo
+sudo -u postgres psql -c "CREATE DATABASE neutrino_db;"
+sudo -u postgres psql -c "CREATE USER neutrino WITH PASSWORD 'neutrino';"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE neutrino_db TO neutrino;"
+sudo -u postgres psql -d neutrino_db -c "
+  CREATE TABLE IF NOT EXISTS user_password (
+    id SERIAL PRIMARY KEY,
+    user_name VARCHAR,
+    password VARCHAR
+  );
+  CREATE TABLE IF NOT EXISTS user_credentials (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR,
+    api_key TEXT
+  );
+"
+sudo -u postgres psql -d neutrino_db -c "
+     INSERT INTO user_password (user_name, password) 
+     VALUES ('admin', '$HASH');
+"
+
+echo
+
+echo "Теперь вы можете зайти в панель, используя указанный ранее пароль."
+echo "Запустите службу neutrino командой"
+echo "sudo systemctl start neutrino"
+echo "После запуска вы cможете зайти в панель управления прокси сервером, используя указанный ранее пароль."
+echo
+
+read
+sudo systemctl daemon-reload
+sudo systemctl enable neutrino
+sudo systemctl start neutrino
+
+# Завершаем скрипт
+exit 0
+
