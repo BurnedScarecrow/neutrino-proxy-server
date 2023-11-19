@@ -10,9 +10,21 @@
         <h1>Neutrino <span class="description"> — smart proxy</span></h1>
       </div>
 
-      <div class="actions">
-        <router-link to="admin">Admin panel</router-link>
-        <a href="#">Create my own</a>
+      <div class="bottom-content">
+        <div class="actions">
+          <a @click="formVisible = !formVisible">Admin panel</a>
+          <a href="#">Create my own</a>
+        </div>
+        <InputField
+          class="hidden-form"
+          :class="{ visible: formVisible }"
+          label="Admin password"
+        >
+          <input type="password" placeholder: v-model="password" />
+          <div class="squared-btn" @click="signIn()">
+            <img src="../assets/icons/login-icon.svg" alt="" />
+          </div>
+        </InputField>
       </div>
     </div>
   </div>
@@ -61,37 +73,52 @@
       font-weight: normal;
     }
 
-    .actions {
+    .bottom-content {
       display: flex;
-      justify-content: flex-start;
-      align-items: center;
-      gap: 20px;
+      flex-direction: column;
+      gap: 15px;
 
-      a:first-child {
-        border: 1px solid #fadafa;
-        color: #fadafa;
-        padding: 5px 20px;
-        font-size: 1rem;
-        border-radius: 10px;
-        background: none;
-        font-family: "Kodchasan", sans-serif;
-        cursor: pointer;
-        transition: all 0.1s ease-in;
+      .hidden-form {
+        transition: all 0.3s ease;
+        opacity: 0;
+        cursor: default;
 
-        &:hover {
-          background: #fadafa;
-          text-decoration: none;
-          color: #180a33;
+        &.visible {
+          opacity: 1;
         }
       }
 
-      a {
-        text-decoration: none;
-        color: #fadafa;
-        display: block;
-        &:hover {
-          text-decoration: underline;
-          // color: #180a33;
+      .actions {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 20px;
+
+        a:first-child {
+          border: 1px solid #fadafa;
+          color: #fadafa;
+          padding: 5px 20px;
+          font-size: 1rem;
+          border-radius: 10px;
+          background: none;
+          font-family: "Kodchasan", sans-serif;
+          cursor: pointer;
+          transition: all 0.1s ease-in;
+
+          &:hover {
+            background: #fadafa;
+            text-decoration: none;
+            color: #180a33;
+          }
+        }
+
+        a {
+          text-decoration: none;
+          color: #fadafa;
+          display: block;
+          &:hover {
+            text-decoration: underline;
+          }
         }
       }
     }
@@ -99,11 +126,46 @@
 }
 </style>
 
-<script lang="ts">
-import { defineComponent } from "vue";
+<script lang="ts" setup>
+import "vue3-toastify/dist/index.css";
+import InputField from "@/components/InputFieldComponent.vue";
+import axios from "axios";
+import { onMounted, ref } from "vue";
+import { toast } from "vue3-toastify";
+import { useRouter } from "vue-router";
+import { useStore } from "vuex";
 
-export default defineComponent({
-  name: "HomeView",
-  components: {},
+const baseurl = "http://localhost:4004/api/";
+
+const store = useStore();
+const router = useRouter();
+
+const password = ref("");
+const formVisible = ref(false);
+
+async function signIn() {
+  try {
+    const result = await axios.post(`${baseurl}auth`, {
+      username: "admin",
+      password: password.value,
+    });
+
+    if (result.status === 201) {
+      store.dispatch("authorize");
+      router.push("/admin");
+    } else {
+      toast.error("Unauthorised");
+    }
+  } catch (e) {
+    toast.error("Unauthorised", {
+      theme: "dark",
+      transition: "flip",
+      autoClose: 2000,
+    });
+  }
+}
+
+onMounted(() => {
+  store.dispatch("logout");
 });
 </script>

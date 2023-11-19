@@ -5,7 +5,7 @@ import { ProxyConfigDto } from './dto/proxy-config.dto';
 
 @Injectable()
 export class ApiService {
-  serviceName = 'bluetooth';
+  serviceName = 'shadowsocks-libev';
 
   getHello(): string {
     return 'Hello World! Answer from API.';

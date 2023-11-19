@@ -6,6 +6,8 @@
   </router-view>
 </template>
 
+<script lang="ts"></script>
+
 <style lang="scss">
 @import url("https://fonts.googleapis.com/css2?family=Kodchasan:ital,wght@0,200;0,400;0,700;1,200&display=swap");
 
@@ -54,5 +56,31 @@ button {
 
 option {
   background: var(--accent);
+}
+
+.squared-btn {
+  height: 35px;
+  width: 35px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 7px;
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  img {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
 }
 </style>

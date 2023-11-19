@@ -8,8 +8,11 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
+import { AccessService } from 'src/access/access.service';
 import { UserService } from 'src/user/user.service';
 import { ApiService } from './api.service';
+import { CreateKeyDto } from './dto/CreateKey.dto';
+import { DeleteKeyDto } from './dto/DeleteKey.dto';
 import { AuthDto } from './dto/auth.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ProxyConfigDto } from './dto/proxy-config.dto';
@@ -19,6 +22,7 @@ export class ApiController {
   constructor(
     private readonly appService: ApiService,
     private readonly userService: UserService,
+    private readonly accessService: AccessService,
   ) {}
 
   @Get()
@@ -104,5 +108,32 @@ export class ApiController {
   @Get('status')
   async proxyStatus() {
     return this.appService.proxyStatus();
+  }
+
+  /* -------------------------------------------------------------------------- */
+
+  @Get('permanent-key')
+  getPermanentKey() {
+    return this.accessService.getPermanentKey();
+  }
+
+  @Post('permanent-key')
+  updatePermanentKey() {
+    return this.accessService.updatePermanentKey();
+  }
+
+  @Post('key')
+  createKey(@Body() dto: CreateKeyDto) {
+    return this.accessService.createKey(dto.username);
+  }
+
+  @Post('delete-key')
+  deleteKey(@Body() dto: DeleteKeyDto) {
+    return this.accessService.deleteKey(dto.username, dto.api_key);
+  }
+
+  @Get('keys')
+  getKeys() {
+    return this.accessService.getKeys();
   }
 }

@@ -1,5 +1,5 @@
 <template>
-  <div class="admin">
+  <div class="admin" v-if="showPanel">
     <header>
       <h3>Neutrino</h3>
     </header>
@@ -8,18 +8,16 @@
       <section class="proxy-settings">
         <InputField label="Proxy password">
           <input :type="passVisibility" v-model="proxyConfig.password" />
-          <img
+          <div
             v-if="passVisibility == 'password'"
             class="squared-btn"
             @click="togglePassword()"
-            src="../assets/icons/eye-opened.svg"
-          />
-          <img
-            v-else
-            class="squared-btn"
-            @click="togglePassword()"
-            src="../assets/icons/eye-closed.svg"
-          />
+          >
+            <img src="../assets/icons/eye-opened.svg" />
+          </div>
+          <div v-else class="squared-btn" @click="togglePassword()">
+            <img src="../assets/icons/eye-closed.svg" />
+          </div>
         </InputField>
         <InputField label="Proxy port">
           <input type="number" v-model="proxyConfig.server_port" />
@@ -75,14 +73,14 @@
           <div
             v-for="item in accessList"
             class="access-list-item"
-            :key="item.key"
-            @click="copyKey(item.key)"
+            :key="item.api_key"
           >
-            {{ item.name }}
+            <span @click="copyKey(item.api_key)">
+              {{ item.username }}
+            </span>
             <img
-              @click="deleteAccess(item.key)"
+              @click="deleteAccess(item.username, item.api_key)"
               src="../assets/icons/delete-icon.svg"
-              alt=""
             />
           </div>
         </div>
@@ -91,11 +89,9 @@
         <div class="create-one-time">
           <InputField label="Create one-time access key">
             <input type="text" v-model="newKeyName" placeholder="Key name" />
-            <img
-              class="squared-btn"
-              @click="createAccessKey()"
-              src="../assets/icons/add-square.svg"
-            />
+            <div class="squared-btn" @click="createAccessKey()">
+              <img src="../assets/icons/add-square.svg" />
+            </div>
           </InputField>
           <InputField label="Copy permanent access key">
             <input
@@ -104,41 +100,44 @@
               disabled
               :value="permanentKey"
             />
-            <img
-              class="squared-btn"
-              src="../assets/icons/copy-icon.svg"
-              @click="copyKey(permanentKey)"
-            />
+            <div class="squared-btn" @click="copyKey(permanentKey)">
+              <img src="../assets/icons/copy.svg" />
+            </div>
+            <div class="squared-btn" @click="refeshPermanetKey()">
+              <img src="../assets/icons/reload-icon.svg" />
+            </div>
           </InputField>
         </div>
+
+        <div class="delimiter"></div>
+
         <div class="admin-password-editor">
           <InputField label="Change admin password">
             <input :type="adminPassVisibility" v-model="adminPassword" />
-            <img
+            <div
               v-if="adminPassVisibility == 'password'"
               class="squared-btn"
               @click="toggleAdminPassword()"
-              src="../assets/icons/eye-opened.svg"
-            />
-            <img
-              v-else
-              class="squared-btn"
-              @click="toggleAdminPassword()"
-              src="../assets/icons/eye-closed.svg"
-            />
-            <img
-              class="squared-btn"
-              @click="changeAdminPassword()"
-              src="../assets/icons/tick.svg"
-            />
+            >
+              <img src="../assets/icons/eye-opened.svg" />
+            </div>
+            <div v-else class="squared-btn" @click="toggleAdminPassword()">
+              <img src="../assets/icons/eye-closed.svg" />
+            </div>
+            <div class="squared-btn" @click="changeAdminPassword()">
+              <img src="../assets/icons/submit-icon.svg" />
+            </div>
           </InputField>
         </div>
+
+        <div class="delimiter"></div>
+
         <button
           class="toggle-proxy"
           @click="toggleProxy()"
           :class="{ 'green-btn': !isProxyActive }"
         >
-          {{ isProxyActive ? "Turn off proxy" : "Turn on proxy" }}
+          {{ isProxyActive ? "Stop proxy" : "Start proxy" }}
         </button>
       </section>
     </main>
@@ -275,6 +274,7 @@ main {
           background: rgba(255, 255, 255, 0.3);
           border-radius: 3px;
         }
+
         .access-list-item {
           background: rgba(255, 255, 255, 0.1);
           display: flex;
@@ -288,7 +288,15 @@ main {
           align-items: center;
           justify-content: space-between;
 
-          &:hover {
+          span {
+            width: 100%;
+          }
+
+          img:hover {
+            cursor: pointer;
+          }
+
+          &:has(span:hover) {
             cursor: pointer;
             background: rgba(255, 255, 255, 0.2);
           }
@@ -334,24 +342,6 @@ main {
       }
     }
 
-    .squared-btn {
-      height: 35px;
-      width: 35px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 7px;
-      margin-left: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 7px;
-      box-sizing: border-box;
-      cursor: pointer;
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.2);
-      }
-    }
-
     button.toggle-proxy {
       background: #d74242;
       color: #fafafa;
@@ -377,13 +367,17 @@ main {
 
 <script lang="ts" setup>
 import InputField from "@/components/InputFieldComponent.vue";
-import axios from "axios";
-import { onMounted, ref } from "vue";
+import axios, { AxiosError, AxiosResponse } from "axios";
+import { Ref, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 import { ToastType, toast } from "vue3-toastify";
 import "vue3-toastify/dist/index.css";
-// import { useRouter } from "vue-router";
+import { useStore } from "vuex";
 
-// const router = useRouter();
+const store = useStore();
+const router = useRouter();
+
+const showPanel = ref(false);
 const baseurl = "http://localhost:4004/api/";
 const passVisibility = ref("password");
 const adminPassVisibility = ref("password");
@@ -398,54 +392,42 @@ const proxyConfig = ref({
   mode: "",
 });
 
-const accessList = ref([
-  {
-    name: "name1",
-    key: "key1",
-  },
-  {
-    name: "name2",
-    key: "key2",
-  },
-  {
-    name: "name3",
-    key: "key3",
-  },
-  {
-    name: "name4",
-    key: "key4",
-  },
-  {
-    name: "name5",
-    key: "key5",
-  },
-  {
-    name: "name6",
-    key: "key6",
-  },
-  {
-    name: "name7",
-    key: "key7",
-  },
-  {
-    name: "name8",
-    key: "key8",
-  },
-]);
+type Access = {
+  id?: number;
+  username: string;
+  api_key: string;
+};
+const accessList: Ref<Access[]> = ref([]);
 
 function setMode(mode: string) {
   proxyConfig.value.mode = mode;
-  // TODO
 }
 
-function deleteAccess(key: string) {
-  accessList.value = accessList.value.filter((item) => item.key != key);
-  // TODO
+function deleteAccess(username: string, api_key: string) {
+  sendRequest(async () => {
+    const response = await axios.post(`${baseurl}delete-key`, {
+      username,
+      api_key,
+    });
+    if (response.status == 201) {
+      getAccessKeys();
+      notify(`Access key ${username} deleted`, "success");
+    }
+  });
 }
 
-async function sendRequest(cb: () => any) {
+function getAccessKeys() {
+  sendRequest(async () => {
+    const response = await axios.get(`${baseurl}keys`);
+    accessList.value = response.data;
+  });
+}
+
+async function sendRequest(
+  cb: () => Promise<AxiosError | AxiosResponse | void>
+) {
   try {
-    await cb();
+    return await cb();
   } catch (e: any) {
     console.log(e);
     if (!e?.response?.data?.message) {
@@ -453,6 +435,7 @@ async function sendRequest(cb: () => any) {
     } else {
       notify(e.response.data.message, "error");
     }
+    return e;
   }
 }
 
@@ -479,21 +462,42 @@ function toggleAdminPassword() {
 }
 
 function createAccessKey() {
-  // TODO
-  if (newKeyName.value.trim() === "") {
+  const keyName = newKeyName.value.trim();
+
+  if (keyName === "") {
     notify("Enter key name firstly", "error");
     return;
   }
+
+  if (accessList.value.filter((item) => item.username === keyName).length) {
+    notify("Name should be unique", "error");
+    return;
+  }
+
   console.log("create key");
-  const item = {
-    name: newKeyName.value,
-    key: newKeyName.value,
-  };
-  accessList.value.push(item);
+  sendRequest(async () => {
+    const response = await axios.post(`${baseurl}key`, {
+      username: newKeyName.value,
+    });
+    if (response.status == 201) {
+      notify(`Access key ${keyName} created`, "success");
+      getAccessKeys();
+    }
+  });
 }
 
 function getPermanentKey() {
-  permanentKey.value = "ntrn://98ad7ab390b1c6f7012db18c04e16bba79d6e";
+  sendRequest(async () => {
+    const response = await axios.get(`${baseurl}permanent-key`);
+    permanentKey.value = response.data;
+  });
+}
+
+function refeshPermanetKey() {
+  sendRequest(async () => {
+    const response = await axios.post(`${baseurl}permanent-key`);
+    permanentKey.value = response.data.api_key;
+  });
 }
 
 function notify(text: string, mode?: ToastType) {
@@ -519,11 +523,9 @@ async function copyKey(key: string) {
 
 function toggleProxy() {
   if (isProxyActive.value) {
-    // TODO turn off
     stopProxy();
     isProxyActive.value = false;
   } else {
-    // TODO turn on
     startProxy();
   }
 }
@@ -547,7 +549,6 @@ function saveConfig() {
     notify("Config saved", "success");
 
     restartProxy();
-    // notify("Restart required.", "default");
   });
 }
 
@@ -676,13 +677,14 @@ function stopProxy() {
   });
 }
 
-onMounted(() => {
-  // const pass = prompt("Enter password");
-  // if (pass != "admin") {
-  //   router.push("/");
-  // }
+onMounted(async () => {
+  if (store.getters.isAuthorized !== true) {
+    router.push("/");
+  }
+  showPanel.value = true;
   proxyStatus();
   getPermanentKey();
+  getAccessKeys();
   getProxyConfig();
 });
 </script>
