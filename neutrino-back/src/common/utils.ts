@@ -1,3 +1,6 @@
+import { InternalServerErrorException } from '@nestjs/common';
+import { readFileSync } from 'fs';
+
 export const hexEncode = function (str) {
   let hex, i;
 
@@ -20,3 +23,16 @@ export const hexDecode = function (hex) {
 
   return back;
 };
+
+export function getProxyConfig() {
+  const filePath = '/etc/shadowsocks-libev/config.json';
+  try {
+    const data = readFileSync(filePath, 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    console.error('Ошибка при синхронном чтении файла:', err);
+    throw new InternalServerErrorException(
+      "Can't read file with proxy settions",
+    );
+  }
+}

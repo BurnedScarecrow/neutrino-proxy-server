@@ -60,7 +60,9 @@ option {
 
 .squared-btn {
   height: 35px;
-  width: 35px;
+  width: 35px !important;
+  padding: 0;
+  margin: 0;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 7px;
   margin-left: 10px;
@@ -73,6 +75,10 @@ option {
   display: flex;
   justify-content: center;
   align-items: center;
+
+  &:focus {
+    background: rgba(255, 255, 255, 0.2);
+  }
 
   img {
     width: 20px;

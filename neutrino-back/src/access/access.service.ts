@@ -48,7 +48,7 @@ export class AccessService {
     const dateHex = hexEncode(date64);
     const dateHash = crypto.MD5(dateHex);
 
-    key.api_key = `ntrn://${ipHex}:${dateHash}:1`;
+    key.api_key = `${ipHex}:${dateHash}:1`;
     return this.repo.save(key);
   }
 
@@ -65,7 +65,7 @@ export class AccessService {
     const dateHash = crypto.MD5(dateHex);
 
     key.username = username.trim();
-    key.api_key = `ntrn://${ipHex}:${dateHash}:0`;
+    key.api_key = `${ipHex}:${dateHash}:0`;
     console.log('crated key', key, 'for ', username);
     const res = await this.repo.save(key);
     console.log(res);

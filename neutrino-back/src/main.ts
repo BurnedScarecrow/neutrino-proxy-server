@@ -24,13 +24,13 @@ try {
 }
 
 async function bootstrap() {
-  const httpApp = await NestFactory.create(AppModule);
-  httpApp.enableCors();
-
   const app = await NestFactory.create(AppModule, { httpsOptions });
   app.enableCors();
 
-  await httpApp.listen(4004); // Порт для HTTP
-  await app.listen(4000);
+  await app.listen(4004);
 }
 bootstrap();
+
+// const httpApp = await NestFactory.create(AppModule);
+// httpApp.enableCors();
+// await httpApp.listen(4004); // Порт для HTTP

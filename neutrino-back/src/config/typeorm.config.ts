@@ -8,7 +8,7 @@ export const typeormAsyncConfig: TypeOrmModuleAsyncOptions = {
     return {
       type: 'postgres',
       host: 'localhost',
-      port: 5431,
+      port: 5432,
       username: 'neutrino',
       password: 'neutrino',
       database: 'neutrino_db',

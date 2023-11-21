@@ -24,7 +24,9 @@
         </InputField>
         <InputField label="Encryption method">
           <select v-model="proxyConfig.method">
-            <option value="chacha-ietf-poly1305">chacha-ietf-poly1305</option>
+            <option value="chacha20-ietf-poly1305">
+              chacha20-ietf-poly1305
+            </option>
             <option value="aes-256-gcm">aes-256-gcm</option>
             <option value="rc4">rc4</option>
           </select>
@@ -378,7 +380,7 @@ const store = useStore();
 const router = useRouter();
 
 const showPanel = ref(false);
-const baseurl = "http://localhost:4004/api/";
+const baseurl = "https://localhost/api/";
 const passVisibility = ref("password");
 const adminPassVisibility = ref("password");
 const newKeyName = ref("");
@@ -387,7 +389,7 @@ const permanentKey = ref("");
 const adminPassword = ref("");
 const proxyConfig = ref({
   password: "",
-  server_port: null,
+  server_port: 0,
   method: "",
   mode: "",
 });
@@ -541,9 +543,30 @@ function getProxyConfig() {
 }
 
 function saveConfig() {
+  const config = proxyConfig.value;
+
+  if (!config.password) {
+    notify("Proxy password shouldnot be empty.", "error");
+    return;
+  }
+  if (
+    !config.server_port ||
+    config.server_port < 0 ||
+    config.server_port > 65535
+  ) {
+    notify("Port should be a number in range between 0 and 65535.", "error");
+    return;
+  }
+
+  if (config.server_port == 443) {
+    notify("Choose another port please", "error");
+    notify("Port 443 (TLS/HTTPS) used by Neutrino server", "info");
+    return;
+  }
+
   sendRequest(async () => {
     const result = await axios.post(`${baseurl}config`, {
-      ...proxyConfig.value,
+      ...config,
     });
     console.log(result);
     notify("Config saved", "success");

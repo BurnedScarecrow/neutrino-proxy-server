@@ -1,27 +1,20 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { exec } from 'child_process';
-import { readFileSync, writeFileSync } from 'fs';
+import { writeFileSync } from 'fs';
+import { getProxyConfig } from 'src/common/utils';
 import { ProxyConfigDto } from './dto/proxy-config.dto';
 
 @Injectable()
 export class ApiService {
   serviceName = 'shadowsocks-libev';
+  // serviceName = 'bluetooth';
 
   getHello(): string {
     return 'Hello World! Answer from API.';
   }
 
   getProxyConfig() {
-    const filePath = '/etc/shadowsocks-libev/config.json';
-    try {
-      const data = readFileSync(filePath, 'utf8');
-      return JSON.parse(data);
-    } catch (err) {
-      console.error('Ошибка при синхронном чтении файла:', err);
-      throw new InternalServerErrorException(
-        "Can't read file with proxy settions",
-      );
-    }
+    return getProxyConfig();
   }
 
   saveProxyConfig(dto: ProxyConfigDto) {
@@ -42,42 +35,29 @@ export class ApiService {
     return new Promise((resolve, reject) => {
       const statusCommand = `systemctl is-active ${this.serviceName}`;
 
-      exec(statusCommand, (error, stdout, stderr) => {
+      exec(statusCommand, (error, stdout) => {
         if (error) {
-          console.error(`Error checking service status: ${error.message}`);
-          resolve('inactive');
-          return;
+          if (error.code === 3) {
+            resolve('inactive');
+          } else {
+            console.error(`Error executing command: ${error.message}`);
+            reject('Error');
+          }
         }
 
-        if (stderr) {
-          console.error(`Error output: ${stderr}`);
-          reject(stderr);
-          return;
-        }
-
-        const status = stdout.trim();
-
-        if (status === 'active') {
-          console.log(`Service ${this.serviceName} is active.`);
-          resolve('active');
-        } else {
-          console.log(
-            `Service ${this.serviceName} is not active. Current status: ${status}`,
-          );
-          resolve(status);
-        }
+        resolve(stdout.trim());
       });
     });
   }
 
   async proxyRestart() {
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<string | void>((resolve, reject) => {
       const restartCommand = `sudo systemctl restart ${this.serviceName}`;
 
       exec(restartCommand, (error, stdout, stderr) => {
         if (error) {
           console.error(`Error restarting service: ${error.message}`);
-          reject(error.message);
+          resolve(error.message);
           return;
         }
 
@@ -87,7 +67,13 @@ export class ApiService {
           return;
         }
 
-        console.log(`Service ${this.serviceName} restarted successfully.`);
+        if (stdout) {
+          console.log(`output: ${stdout}`);
+          resolve(stdout);
+          return;
+        }
+
+        console.log(`Service ${this.serviceName} restarting`);
         resolve();
       });
     });
@@ -110,7 +96,7 @@ export class ApiService {
           return;
         }
 
-        console.log(`Service ${this.serviceName} started successfully.`);
+        console.log(`Service ${this.serviceName} starting.`);
         resolve();
       });
     });
@@ -133,7 +119,7 @@ export class ApiService {
           return;
         }
 
-        console.log(`Service ${this.serviceName} stopped successfully.`);
+        console.log(`Service ${this.serviceName} finishing.`);
         resolve();
       });
     });

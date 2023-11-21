@@ -168,7 +168,6 @@ sudo service postgresql start
 echo
 sudo -u postgres psql -c "CREATE DATABASE neutrino_db;"
 sudo -u postgres psql -c "CREATE USER neutrino WITH PASSWORD 'neutrino';"
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE neutrino_db TO neutrino;"
 sudo -u postgres psql -d neutrino_db -c "
   CREATE TABLE IF NOT EXISTS user_password (
     id SERIAL PRIMARY KEY,
@@ -185,18 +184,27 @@ sudo -u postgres psql -d neutrino_db -c "
      INSERT INTO user_password (user_name, password) 
      VALUES ('admin', '$HASH');
 "
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON TABLE user_credentials TO neutrino;" -d neutrino_db
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON TABLE user_password TO neutrino;" -d neutrino_db
+sudo -u postgres psql -c "GRANT USAGE, SELECT ON SEQUENCE user_credentials_id_seq TO neutrino;" -d neutrino_db
+
 
 echo
 
 echo "Теперь вы можете зайти в панель, используя указанный ранее пароль."
-echo "Запустите службу neutrino командой"
+echo "Служба neutrino запускается командой" 
 echo "sudo systemctl start neutrino"
+echo "Neutrino запустится автоматически после установки"
 echo "После запуска вы cможете зайти в панель управления прокси сервером, используя указанный ранее пароль."
 echo
+echo "Наэмите Enter для продолжения"
 
 read
+
+echo "Запуск Neutrino 🚀"
 sudo systemctl daemon-reload
 sudo systemctl enable neutrino
+sudo systemctl enable shadowsocks-libev
 sudo systemctl start neutrino
 
 # Завершаем скрипт

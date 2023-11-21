@@ -21,9 +21,9 @@
           label="Admin password"
         >
           <input type="password" placeholder: v-model="password" />
-          <div class="squared-btn" @click="signIn()">
+          <button class="squared-btn" @click="signIn()">
             <img src="../assets/icons/login-icon.svg" alt="" />
-          </div>
+          </button>
         </InputField>
       </div>
     </div>
@@ -135,7 +135,7 @@ import { toast } from "vue3-toastify";
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 
-const baseurl = "http://localhost:4004/api/";
+const baseurl = "https://localhost/api/";
 
 const store = useStore();
 const router = useRouter();
