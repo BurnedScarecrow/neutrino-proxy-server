@@ -3,7 +3,7 @@
 ## Сборка и установка
 
 ```bash
-    sudo ./install.sh
+    sudo ./build.sh
 ```
 
 ## Изменение UI в пакете
