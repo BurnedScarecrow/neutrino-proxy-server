@@ -119,7 +119,7 @@ elif [ "$domain" ]; then
 
         echo ""
         echo "Создание в планировщике записи об обновлении сертификата."
-        sudo mv /etc/nginx/_certbot /etc/cron.d/certbot
+        sudo cp /etc/nginx/_certbot /etc/cron.d/certbot
     else
         echo ""
         echo "Не удалось получить сертификат от EFF."
@@ -197,7 +197,7 @@ echo "sudo systemctl start neutrino"
 echo "Neutrino запустится автоматически после установки"
 echo "После запуска вы cможете зайти в панель управления прокси сервером, используя указанный ранее пароль."
 echo
-echo "Наэмите Enter для продолжения"
+echo "Нажмите Enter для продолжения"
 
 read
 

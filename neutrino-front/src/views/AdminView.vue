@@ -24,11 +24,14 @@
         </InputField>
         <InputField label="Encryption method">
           <select v-model="proxyConfig.method">
+            <option value="rc4-md5">rc4-md5</option>
+            <option value="aes-128-gcm">aes-128-gcm</option>
+            <option value="aes-192-gcm">aes-192-gcm</option>
+            <option value="aes-256-gcm">aes-256-gcm</option>
+            <option value="aes-256-cfb">aes-256-cfb</option>
             <option value="chacha20-ietf-poly1305">
               chacha20-ietf-poly1305
             </option>
-            <option value="aes-256-gcm">aes-256-gcm</option>
-            <option value="rc4">rc4</option>
           </select>
         </InputField>
         <InputField label="Proxy mode">

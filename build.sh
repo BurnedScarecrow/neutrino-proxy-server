@@ -12,6 +12,7 @@
 echo -e "\n\nBUILD deb package"
 sudo dpkg -b ./neutrino
 sudo cp ./neutrino.deb ./sandbox/neutrino.deb
+sudo cp ./neutrino.deb ./builds/neutrino-server.deb
 
-# echo -e "\n\nINSTALL citus-master.deb"
+# echo -e "\n\nINSTALL neutrino"
 # sudo apt-get install ./citus-master.deb
