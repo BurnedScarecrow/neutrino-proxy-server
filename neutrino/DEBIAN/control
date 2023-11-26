@@ -3,7 +3,7 @@ Version: 1.0
 Architecture: all
 Essential: no
 Priority: optional
-Pre-Depends: curl
-Depends: curl, systemctl, lsof, nodejs, npm, nginx, certbot, shadowsocks-libev, postgresql
+Pre-Depends: systemd-sysv
+Depends: curl, lsof, nodejs, npm, nginx, certbot, shadowsocks-libev, postgresql
 Maintainer: Alexander Evsikov
 Description: Fast-configurable shadowsocks server with web control pannel.
