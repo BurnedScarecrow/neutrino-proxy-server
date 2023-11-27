@@ -73,27 +73,6 @@ echo ""
 echo "Post-install script processing"
 
 
-cd "/usr/share/neutrino-server/back"
-
-sudo n lts
-echo 🔥
-sudo node -v
-
-sudo npm i  
-echo "✅ Install node modules for backend"
-
-cd "/usr/share/neutrino-server/front"
-echo 'VUE_APP_BACKEND_HOST='$IP > .env 
-
-sudo n lts
-echo 🔥
-sudo node -v
-
-sudo npm i
-echo "✅ Install node modules for frontend"
-sudo npm run build 
-
-
 # ---------------------------------------------------------------------------- #
 
 echo ""
@@ -161,6 +140,33 @@ else
 fi
 
 echo ""
+
+
+cd "/usr/share/neutrino-server/back"
+
+sudo n lts
+echo 🔥
+sudo node -v
+
+sudo npm i  
+echo "✅ Install node modules for backend"
+
+cd "/usr/share/neutrino-server/front"
+if [ -z "$domain" ]; then
+  echo 'VUE_APP_BACKEND_HOST='$IP > .env
+else
+  echo 'VUE_APP_BACKEND_HOST='$domain > .env
+fi
+
+sudo n lts
+echo 🔥
+sudo node -v
+
+sudo npm i
+echo "✅ Install node modules for frontend"
+sudo npm run build 
+
+
 echo "Конфигурация сервера завершена."
 
 echo "Задайте пароль администратора neutrino panel"
@@ -218,14 +224,16 @@ echo "Нажмите Enter для продолжения"
 read
 
 sudo systemctl daemon-reload
-echo "Запуск NGINX 🚀"
 sudo systemctl enable nginx
-echo "Запуск Shadowsocks 🚀"
 sudo systemctl enable shadowsocks-libev
-
-echo "Запуск Neutrino 🚀"
 sudo systemctl enable neutrino
-sudo systemctl start neutrino
+
+echo "Запуск NGINX 🚀"
+sudo service nginx restart
+echo "Запуск Shadowsocks 🚀"
+sudo service shadowsocks-libev restart 
+echo "Запуск Neutrino 🚀"
+sudo service neutrino start
 
 # Завершаем скрипт
 exit 0
