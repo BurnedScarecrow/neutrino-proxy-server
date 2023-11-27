@@ -15,9 +15,9 @@
     npm run build
 ```
 
-3. Содержимое front/dist копировать в /usr/share/neutrino-server/front/
+3. Содержимое neutrino-front копировать в /usr/share/neutrino-server/front/
 
 ## Изменение API в пакете
 
 1. В папке back изменяются исходники API
-2. Содержимое back копировать в /usr/share/neutrino-server/back/ исключая node_modules
+2. Содержимое neutrino-back копировать в /usr/share/neutrino-server/back

@@ -135,7 +135,10 @@ import { toast } from "vue3-toastify";
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 
-const baseurl = "https://localhost/api/";
+const host = process.env.VUE_APP_BACKEND_HOST || "localhost";
+console.log("Backend Domain:", host);
+
+const baseurl = `https://${host}/api/`;
 
 const store = useStore();
 const router = useRouter();

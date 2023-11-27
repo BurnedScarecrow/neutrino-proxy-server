@@ -383,7 +383,8 @@ const store = useStore();
 const router = useRouter();
 
 const showPanel = ref(false);
-const baseurl = "https://localhost/api/";
+const host = process.env.VUE_APP_BACKEND_HOST || "localhost";
+const baseurl = `https://${host}/api/`;
 const passVisibility = ref("password");
 const adminPassVisibility = ref("password");
 const newKeyName = ref("");

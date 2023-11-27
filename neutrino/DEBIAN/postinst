@@ -4,6 +4,8 @@ clear
 
 set -e
 
+IP=$(curl https://ifconfig.me/ip)
+
 function update_nginx_config() {
     local param1=$1
     local domain=$2
@@ -72,11 +74,25 @@ echo "Post-install script processing"
 
 
 cd "/usr/share/neutrino-server/back"
-sudo npm i -g n
-sudo n lts 
-sudo npm i -g serve --quite
-npm i 
-echo "✅ Install node modules"
+
+sudo n lts
+echo 🔥
+sudo node -v
+
+sudo npm i  
+echo "✅ Install node modules for backend"
+
+cd "/usr/share/neutrino-server/front"
+echo 'VUE_APP_BACKEND_HOST='$IP > .env 
+
+sudo n lts
+echo 🔥
+sudo node -v
+
+sudo npm i
+echo "✅ Install node modules for frontend"
+sudo npm run build 
+
 
 # ---------------------------------------------------------------------------- #
 
@@ -201,10 +217,14 @@ echo "Нажмите Enter для продолжения"
 
 read
 
-echo "Запуск Neutrino 🚀"
 sudo systemctl daemon-reload
-sudo systemctl enable neutrino
+echo "Запуск NGINX 🚀"
+sudo systemctl enable nginx
+echo "Запуск Shadowsocks 🚀"
 sudo systemctl enable shadowsocks-libev
+
+echo "Запуск Neutrino 🚀"
+sudo systemctl enable neutrino
 sudo systemctl start neutrino
 
 # Завершаем скрипт
