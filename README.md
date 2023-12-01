@@ -21,3 +21,9 @@
 
 1. В папке back изменяются исходники API
 2. Содержимое neutrino-back копировать в /usr/share/neutrino-server/back
+
+## Скачивание deb пакета через wget
+ **Ubuntu 22.04** 
+```bash 
+    wget https://github.com/BurnedScarecrow/neutrino-proxy-server/raw/master/builds/neutrino-server.deb
+```
